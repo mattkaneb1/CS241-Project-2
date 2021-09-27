@@ -73,8 +73,34 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # Don't stand still
+        pos = currentGameState.getPacmanPosition()
+        if pos == newPos:
+          return -float("inf")
+
+        # How far was/is ghost
+        minDistFromGhostNow  = float('inf')
+        minDistFromGhostThen = float('inf')
+        for g in range(len(newGhostStates)):
+          minDistFromGhostNow  = min(minDistFromGhostNow,manhattanDistance(newPos,newGhostStates[g].getPosition()))
+          minDistFromGhostThen = min(minDistFromGhostThen,manhattanDistance(pos,newGhostStates[g].getPosition()))
+        
+        # How far is closest food
+        minDistFromFood = float('inf')
+        for f in newFood.asList():
+          d = manhattanDistance(newPos,f)
+          minDistFromFood = min(minDistFromFood,d)
+
+        # Do I eat a dot on this turn
+        dotEaten = int(len(newFood.asList()) < len(currentGameState.getFood().asList()))
+
+        # If the ghost was close, make the move that leaves me the farthest away
+        if minDistFromGhostThen < 3:
+          return minDistFromGhostNow
+        
+        # If not, do moves that eat dots or get you closer to the nearest dot
+        else:
+          return dotEaten + 1/float(minDistFromFood)
 
 def scoreEvaluationFunction(currentGameState):
     """
