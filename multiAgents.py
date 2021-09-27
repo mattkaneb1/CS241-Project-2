@@ -102,6 +102,26 @@ class ReflexAgent(Agent):
         else:
           return dotEaten + 1/float(minDistFromFood)
 
+        # Performs pretty well in regular maze(Really bad in openClassic)
+        """
+        pos = currentGameState.getPacmanPosition()
+        if pos == newPos:
+          return -0.5
+        
+        minDistFromGhost = float('inf')
+        for g in range(len(newGhostStates)):
+            if newScaredTimes[g] == 0:
+              minDistFromGhost = min(minDistFromGhost,manhattanDistance(newPos,newGhostStates[g].getPosition()))
+
+        if minDistFromGhost < 3 :
+          print("Danger" + str(minDistFromGhost))
+          return minDistFromGhost
+
+        else:
+          print(successorGameState.getScore())
+          return successorGameState.getScore()
+        """
+
 def scoreEvaluationFunction(currentGameState):
     """
       This default evaluation function just returns the score of the state.
