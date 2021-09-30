@@ -158,10 +158,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
 
     def isTerminal(self, agent, state, depth):
-    if agent == 0:
-        return (state.isWin() or state.isLose()) or self.depth == depth
-    else:
-        return state.isWin() or state.isLose()
+        if agent == 0:
+            return (state.isWin() or state.isLose()) or self.depth == depth
+        else:
+            return state.isWin() or state.isLose()
 
     def getAction(self, gameState):
         """
