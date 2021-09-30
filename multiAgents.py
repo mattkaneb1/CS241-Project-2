@@ -157,65 +157,131 @@ class MinimaxAgent(MultiAgentSearchAgent):
       Your minimax agent (question 2)
     """
 
+    def isTerminal(self, agent, state, depth):
+    if agent == 0:
+        return (state.isWin() or state.isLose()) or self.depth == depth
+    else:
+        return state.isWin() or state.isLose()
+
     def getAction(self, gameState):
         """
           Returns the minimax action from the current gameState using self.depth
           and self.evaluationFunction.
-
           Here are some method calls that might be useful when implementing minimax.
-
           gameState.getLegalActions(agentIndex):
             Returns a list of legal actions for an agent
             agentIndex=0 means Pacman, ghosts are >= 1
-
           gameState.generateSuccessor(agentIndex, action):
             Returns the successor game state after an agent takes an action
-
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        m = self.miniMax(gameState,0,-1)
-        d = {}
-        for action in gameState.getLegalActions(0):
-          d[action] = self.miniMax(gameState.generateSuccessor(0, action),-1,1)
 
-        v = max(d.values())
-        for m in d.keys():
-           if d[m] == v:
-            return m
+        def pacMove(state, depth):
+            if self.isTerminal(0, state, depth+1): #self.terminalTest(state) or self.cutoffTest(depth+1):
+                return self.evaluationFunction(state)
+            legalActions = state.getLegalActions()
+            currMax = float('-inf')
+            for action in legalActions:
+                successorState = state.generateSuccessor(0, action)
+                currMax = max(currMax, ghostMove(1, successorState, depth+1)) #first ghost has next move
+            return currMax
 
+        def ghostMove(ghostNum, state, depth):
+            if self.isTerminal(ghostNum, state, depth): #self.terminalTest(state): #no cutoff check because depth only updated after all ghosts make move
+                return self.evaluationFunction(state)
+            legalActions = state.getLegalActions(ghostNum)
+            currMin = float('inf')
+            for action in legalActions:
+                successorState = state.generateSuccessor(ghostNum, action)
+                if (ghostNum + 1) % gameState.getNumAgents() != 0: #if not last ghost, the next ghost moves next
+                    currMin = min(currMin, ghostMove(ghostNum + 1, successorState, depth))
+                else: #if last ghost, pacman has next move
+                    currMin = min(currMin, pacMove(successorState, depth))
+            return currMin
 
-    def miniMax(self,gameState,depth,agent):
-      if self.terminalTest(gameState):
-        return gameState.getScore()
-      elif self.cutoffTest(depth):
-        return gameState.getScore()
-      else:
-        nextAgent = (agent + 1) % gameState.getNumAgents()
+        legalActions = gameState.getLegalActions() #start of game, pacman has first move
+        maximum = float('-inf')
+        bestAction = None
+        for action in legalActions:
+            successorState = gameState.generateSuccessor(0, action)
+            currVal = ghostMove(1, successorState, 0) #first ghost has next move
+            if currVal > maximum:
+                maximum = currVal
+                bestAction = action
+        return bestAction
+
+        """
+        if we're at the max level, take the action that maximizes chances
+        if gameState is terminal
+            return evaluationFunction(gameState)
+        get actions for max
+        for action in actions
+            generate the successor from resulting action
+            get the max(currentMax, minLevel(ghost, depth, nextAgent))
+        return max
         
-        # If Pacman
-        if agent == 0:
-          pacmanMoves = gameState.getLegalActions(agent)
-          scores = []
-          for move in pacmanMoves:
-            scores.append(self.miniMax(gameState.generateSuccessor(agent, move),depth+1,nextAgent))
-          return max(scores)
+        if we're at min level, take action that minimizes reward
+        if gameState is terminal
+            return evaluationFunciton(gamestate)
+        get actions for min
+        for action in actions
+            generate successor from resulting action
+            if next agent is ghost
+                get the min(currentMin, minLevel(successor, depth, ghost)
+            if next agent is pacman
+                get min(currentMin, maxLevel(successor, depth)
+        return min
+        
+        at the root
+        generate actions for pacman
+        for action in actions
+            get successor from action
+            currValue = minLevel(successor, depth, ghostIndex=1)
+            if currValue > max
+                max = currValue
+                bestAction = action
+        return bestAction
+        """
 
+
+        """
+        m = self.miniMax(gameState, 0, -1) #call minimax for pacman
+        d = {} #dictionary that maps actions with values
+        for action in gameState.getLegalActions(0):
+            d[action] = self.miniMax(gameState.generateSuccessor(0, action), -1, 1)
+
+        v = max(d.values()) #find the max value
+        for m in d.keys():
+            if d[m] == v:
+                return m #return action associated with max value
+
+    def miniMax(self, gameState, depth, agent):
+        if self.terminalTest(gameState):
+            return self.evaluationFunction(gameState) #gameState.getScore()
+        elif self.cutoffTest(depth):
+            return self.evaluationFunction(gameState) #gameState.getScore()
         else:
-          ghostMoves = gameState.getLegalActions(agent)
-          scores = []
-          for move in ghostMoves:
-            scores.append(self.miniMax(gameState.generateSuccessor(agent, move),depth,nextAgent))
-          return min(scores)
+            nextAgent = (agent + 1) % gameState.getNumAgents()
 
-    # Checks if game is over
-    def terminalTest(self, gameState):
-      return gameState.isWin() or gameState.isLose()
+            # If Pacman
+            if agent == 0:
+                pacmanMoves = gameState.getLegalActions(agent)
+                scores = []
+                for move in pacmanMoves:
+                    scores.append(self.miniMax(gameState.generateSuccessor(agent, move), depth + 1, nextAgent))
+                return max(scores)
 
-    # Checks if minimax has explored up to the specificied depth
-    def cutoffTest(self,depth):
-      return self.depth <= depth
-
+            else:
+                ghostMoves = gameState.getLegalActions(agent)
+                scores = []
+                for move in ghostMoves:
+                    if nextAgent == 0:
+                        scores.append(self.miniMax(gameState.generateSuccessor(agent, move), depth, nextAgent))
+                    else:
+                        scores.append(self.miniMax(gameState.generateSuccessor(agent, move), depth, nextAgent))
+                return min(scores)
+        """
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
