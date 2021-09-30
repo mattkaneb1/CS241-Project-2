@@ -288,12 +288,73 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       Your minimax agent with alpha-beta pruning (question 3)
     """
 
+    def isTerminal(self, agent, state, depth):
+        if agent == 0:
+            return (state.isWin() or state.isLose()) or self.depth == depth
+        else:
+            return state.isWin() or state.isLose()
+
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        legalActions = gameState.getLegalActions() 
+        maximum = float('-inf')
+        bestAction = None
+        for action in legalActions:
+            successorState = gameState.generateSuccessor(0, action)
+            currVal = self.minValue(successorState,float('-inf'),float('inf'),1,0)
+            if currVal > maximum:
+                maximum = currVal
+                bestAction = action
+        return bestAction
+
+    def minValue(self,state,alpha,beta,agent,depth):
+
+      if self.isTerminal(agent,state,depth):
+        return self.evaluationFunction(state)
+
+      v = float('inf')
+
+      nextAgent = (agent + 1) % state.getNumAgents()
+      for action in state.getLegalActions(agent):
+        successorState = state.generateSuccessor(agent, action)
+
+        if nextAgent == 0:
+          v = min(v,self.maxValue(successorState,alpha,beta,nextAgent,depth+1))
+        else:
+          v = min(v,self.minValue(successorState,alpha,beta,nextAgent,depth))
+
+        if v < alpha:
+          return v
+
+        beta = min(beta,v)
+
+      return v
+
+    def maxValue(self,state,alpha,beta,agent,depth):
+
+      if self.isTerminal(agent,state,depth):
+        return self.evaluationFunction(state)
+
+      v = float('-inf')
+
+      nextAgent = (agent + 1) % state.getNumAgents()
+
+      for action in state.getLegalActions(agent):
+        successorState = state.generateSuccessor(agent, action)
+
+        v = max(v,self.minValue(successorState,alpha,beta,nextAgent,depth))
+
+        if v > beta:
+          return v
+
+        alpha = max(alpha,v)
+
+      return v
+
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
