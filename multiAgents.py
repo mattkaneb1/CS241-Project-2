@@ -325,6 +325,38 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
       Your expectimax agent (question 4)
     """
 
+
+    def isTerminal(self, agent, state, depth):
+        if agent == 0:
+            return (state.isWin() or state.isLose()) or self.depth == depth
+        else:
+            return state.isWin() or state.isLose()
+
+    def pacMove(self, state, depth):
+        if self.isTerminal(0, state, depth + 1):
+            return self.evaluationFunction(state)
+        currMax = float('-inf')
+        for action in state.getLegalActions():
+            successorState = state.generateSuccessor(0, action)
+            currMax = max(currMax, self.ghostMove(1, successorState, depth + 1))  # first ghost has next move
+        return currMax
+
+    def ghostMove(self, ghostNum, state, depth):
+        if self.isTerminal(ghostNum, state, depth):
+            return self.evaluationFunction(state)
+        expected = 0
+        numActions = len(state.getLegalActions(ghostNum))
+        for action in state.getLegalActions(ghostNum):
+            successorState = state.generateSuccessor(ghostNum, action)
+            if (ghostNum + 1) % state.getNumAgents() != 0:  # if not last ghost, the next ghost moves next
+                expected += (1.0 / numActions) * self.ghostMove(ghostNum + 1, successorState, depth)
+                #currMin = min(currMin, self.ghostMove(ghostNum + 1, successorState, depth))
+            else:  # if last ghost, pacman has next move
+                expected += (1.0 / numActions) * self.pacMove(successorState, depth)
+                #currMin = min(currMin, self.pacMove(successorState, depth))
+        return expected
+
+
     def getAction(self, gameState):
         """
           Returns the expectimax action using self.depth and self.evaluationFunction
@@ -332,9 +364,17 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        maximum = float('-inf')
+        bestAction = None
+        for action in gameState.getLegalActions():
+            successorState = gameState.generateSuccessor(0, action)
+            expectedVal = self.ghostMove(1, successorState, 0) #first ghost has next move
+            if expectedVal > maximum:
+                maximum = expectedVal
+                bestAction = action
+        return bestAction
+    
+    
 def betterEvaluationFunction(currentGameState):
     """
       Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
