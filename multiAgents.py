@@ -325,7 +325,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
       Your expectimax agent (question 4)
     """
 
-
     def isTerminal(self, agent, state, depth):
         if agent == 0:
             return (state.isWin() or state.isLose()) or self.depth == depth
@@ -382,8 +381,37 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Grad state of ghosts and Pacman's position
+    ghostStates = currentGameState.getGhostStates()
+    scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+    pos = currentGameState.getPacmanPosition()
+
+
+    # Calculate minimum distance from ghost
+    minDistFromGhost = float('inf')
+    for g in range(len(ghostStates)):
+      if scaredTimes[g] == 0:
+        minDistFromGhost = min(minDistFromGhost,manhattanDistance(pos,ghostStates[g].getPosition()))
+
+    # Calculate minimum and maximum distance from food
+    food = currentGameState.getFood()
+    minDistFromFood = float('inf')
+    maxDistFromFood = float('-inf')
+    for f in food.asList():
+      d = manhattanDistance(pos,f)
+      minDistFromFood = min(minDistFromFood,d)
+      maxDistFromFood = max(maxDistFromFood,d)
+
+    # If ghost is nearby, run away 
+    if minDistFromGhost < 3 :
+      #print("Danger" + str(minDistFromGhost))
+      return minDistFromGhost
+
+    # If ghosts arent closeby, focus on getting closer to food/higher scores
+    else:
+      #print(currentGameState.getScore())
+      return currentGameState.getScore() + 1.0/minDistFromFood + 1.0/maxDistFromFood 
 
 # Abbreviation
 better = betterEvaluationFunction
