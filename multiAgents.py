@@ -156,12 +156,32 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
       Your minimax agent (question 2)
     """
-
     def isTerminal(self, agent, state, depth):
         if agent == 0:
             return (state.isWin() or state.isLose()) or self.depth == depth
         else:
             return state.isWin() or state.isLose()
+
+    def pacMove(self, state, depth):
+        if self.isTerminal(0, state, depth + 1): 
+            return self.evaluationFunction(state)
+        currMax = float('-inf')
+        for action in state.getLegalActions():
+            successorState = state.generateSuccessor(0, action)
+            currMax = max(currMax, self.ghostMove(1, successorState, depth + 1))  # first ghost has next move
+        return currMax
+
+    def ghostMove(self, ghostNum, state, depth):
+        if self.isTerminal(ghostNum, state, depth):  
+            return self.evaluationFunction(state)
+        currMin = float('inf')
+        for action in state.getLegalActions(ghostNum):
+            successorState = state.generateSuccessor(ghostNum, action)
+            if (ghostNum + 1) % state.getNumAgents() != 0:  # if not last ghost, the next ghost moves next
+                currMin = min(currMin, self.ghostMove(ghostNum + 1, successorState, depth))
+            else:  # if last ghost, pacman has next move
+                currMin = min(currMin, self.pacMove(successorState, depth))
+        return currMin
 
     def getAction(self, gameState):
         """
@@ -177,73 +197,15 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
 
-        def pacMove(state, depth):
-            if self.isTerminal(0, state, depth+1): #self.terminalTest(state) or self.cutoffTest(depth+1):
-                return self.evaluationFunction(state)
-            legalActions = state.getLegalActions()
-            currMax = float('-inf')
-            for action in legalActions:
-                successorState = state.generateSuccessor(0, action)
-                currMax = max(currMax, ghostMove(1, successorState, depth+1)) #first ghost has next move
-            return currMax
-
-        def ghostMove(ghostNum, state, depth):
-            if self.isTerminal(ghostNum, state, depth): #self.terminalTest(state): #no cutoff check because depth only updated after all ghosts make move
-                return self.evaluationFunction(state)
-            legalActions = state.getLegalActions(ghostNum)
-            currMin = float('inf')
-            for action in legalActions:
-                successorState = state.generateSuccessor(ghostNum, action)
-                if (ghostNum + 1) % gameState.getNumAgents() != 0: #if not last ghost, the next ghost moves next
-                    currMin = min(currMin, ghostMove(ghostNum + 1, successorState, depth))
-                else: #if last ghost, pacman has next move
-                    currMin = min(currMin, pacMove(successorState, depth))
-            return currMin
-
-        legalActions = gameState.getLegalActions() #start of game, pacman has first move
         maximum = float('-inf')
         bestAction = None
-        for action in legalActions:
+        for action in gameState.getLegalActions():
             successorState = gameState.generateSuccessor(0, action)
-            currVal = ghostMove(1, successorState, 0) #first ghost has next move
+            currVal = self.ghostMove(1, successorState, 0) #first ghost has next move
             if currVal > maximum:
                 maximum = currVal
                 bestAction = action
         return bestAction
-
-        """
-        if we're at the max level, take the action that maximizes chances
-        if gameState is terminal
-            return evaluationFunction(gameState)
-        get actions for max
-        for action in actions
-            generate the successor from resulting action
-            get the max(currentMax, minLevel(ghost, depth, nextAgent))
-        return max
-        
-        if we're at min level, take action that minimizes reward
-        if gameState is terminal
-            return evaluationFunciton(gamestate)
-        get actions for min
-        for action in actions
-            generate successor from resulting action
-            if next agent is ghost
-                get the min(currentMin, minLevel(successor, depth, ghost)
-            if next agent is pacman
-                get min(currentMin, maxLevel(successor, depth)
-        return min
-        
-        at the root
-        generate actions for pacman
-        for action in actions
-            get successor from action
-            currValue = minLevel(successor, depth, ghostIndex=1)
-            if currValue > max
-                max = currValue
-                bestAction = action
-        return bestAction
-        """
-
 
         """
         m = self.miniMax(gameState, 0, -1) #call minimax for pacman
@@ -283,11 +245,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return min(scores)
         """
 
+
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
-
     def isTerminal(self, agent, state, depth):
         if agent == 0:
             return (state.isWin() or state.isLose()) or self.depth == depth
@@ -299,15 +261,18 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
 
-        legalActions = gameState.getLegalActions() 
         maximum = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
         bestAction = None
-        for action in legalActions:
+        for action in gameState.getLegalActions():
             successorState = gameState.generateSuccessor(0, action)
-            currVal = self.minValue(successorState,float('-inf'),float('inf'),1,0)
+            currVal = self.minValue(successorState,alpha,beta,1,0)
             if currVal > maximum:
                 maximum = currVal
                 bestAction = action
+            if currVal > alpha:
+                alpha = currVal #update alpha at the root
         return bestAction
 
     def minValue(self,state,alpha,beta,agent,depth):
@@ -353,7 +318,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         alpha = max(alpha,v)
 
       return v
-
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
